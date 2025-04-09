@@ -32,4 +32,39 @@ def drawCardsForHandType(handType,cards):
     paired = card1 == card2
 
     hand = []
+    for card in cards:
+        if len(hand) == 0:
+            if card[0] == card1 or card[0] == card2:
+                hand.append(card)
+        elif card[0] != hand[0][0]:
+            if card[0] == card1 or card[0] == card2:
+                if (card[1] == hand[0][1]) == suited:
+                    hand.append(card)
+                    break
+        elif paired:
+            hand.append(card)
+            break
+    for card in hand:
+        cards.remove(card)
+    return hand
+
+#this function calculates the estimated value of a hand against another hand - given 2 starting cards and 5 cards on the table
+def calcEVForMatchup(hand_type1, hand_type2):
+    hand1_wins, hand1ties = 0.0, 0.0
+    num_iters = 10000
+    for _ in range(num_iters):
+        deck = allCards()
+        np.random.shuffle(deck)
+        hand1 = drawCardsForHandType(hand_type1, deck)
+        hand2 = drawCardsForHandType(hand_type2, deck)
+
+        board = random.sample(deck,5)
+        hand1_score = evaluate_cards(board + hand1)
+        hand2_score = evaluate_cards(board + hand2)
+        if hand1_score > hand2_score:
+            hand1_wins += 1
+        elif hand1_score == hand2_score:
+            hand1ties += 1
     
+    hand1_equity = hand1_wins / num_iters + hand1ties / (2 * num_iters)
+    return hand1_equity
