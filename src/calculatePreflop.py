@@ -68,3 +68,23 @@ def calcEVForMatchup(hand_type1, hand_type2):
     
     hand1_equity = hand1_wins / num_iters + hand1ties / (2 * num_iters)
     return hand1_equity
+
+if __name__ == "__main__":
+    starting_hands = genStartingHands()
+    ev_dict = defaultdict(lambda:defaultdict(float))
+    for i in range(len(starting_hands)):
+        for j in range(len(starting_hands)):
+            hand1 = starting_hands[i]
+            hand2 = starting_hands[j]
+            if hand1 == hand2:
+                continue
+            if hand2 in ev_dict:
+                if hand1 in ev_dict[hand2]:
+                    continue
+            ev_dict[hand1][hand2] = calcEVForMatchup(hand1,hand2)
+            print(hand1,hand2,ev_dict[hand1][hand2])
+    import json
+
+    with open("preflop_ev.json", "w") as f:
+        json.dump(ev_dict, f)
+        
