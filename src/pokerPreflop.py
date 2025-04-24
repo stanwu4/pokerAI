@@ -250,7 +250,7 @@ class QLearningAgent:
         self.experience_buffer = []
         self.buffer_cnt = 0
 
-    def print_table(slef, save_file = None):
+    def print_table(self, save_file = None):
         for state_action in self.q_table.keys():
             state, action = state_action
             print(f"State: {state}", file = save_file)
@@ -258,8 +258,84 @@ class QLearningAgent:
             print(f"Q-Value: {self.q_table[state_action]}", file = save_file)
             print("", file = save_file)
     
-    def main():
+    def load_table(slef, filename):
+        with open(filename, "r", encoding = "utf-8") as f:
+            state = None
+            action_str = None
+            for line in f:
+                line = line.strip()
+                if line.startswith("State: "):
+                    state = line[len("State: ") :]
+                elif line.startswith("Action: "):
+                    action_str = line[len("Action: ") :]
+                elif line.startswith("Q-value: "):
+                    q_value_str = line[len("Q-value: ") :]
+                    q_value = float(q_value_str)
+                    action = actions[action_str.split(".")[-1]]
+                    self.q_table[(state, action)] = q_value
+        
+        print(f"Q-table successfully loaded from '{filename}'")
 
+    def play_game(agent, copy_agent):
+        game = Game()
+        player1_agent = np.random.uniform() > 0.5
+
+        while not game.get_game_over():
+            if game.player1_turn:
+                state = game.get_state(player_one=True)
+                legal_actions = Game.get_actions(game.state)
+                if player1_agent:
+                    action = agent.choose_action(state, legal_actions)
+                    agent.history.append((state, action))
+                else:
+                    action = copy_agent.choose_action(state, legal_actions)
+                game.make_action(action)
+            else:
+                state = game.get_state(player_one=False)
+                legal_actions = Game.get_actions(game.state)
+                if not player1_agent:
+                    action = agent.choose_action(state, legal_actions)
+                    agent.history.append((state, action))
+                else:
+                    action = copy_agent.choose_action(state, legal_actions)
+                game.make_action(action)
+
+        reward = game.get_reward()
+
+        agent.buffer_cnt += 1
+        agent.load_experiences(final_reward=(reward if player1_agent else -reward))
+
+        return reward
+    
+    def simulate_game(agent1, agent2):
+        game = Game()
+
+        while not game.get_game_over():
+            if game.player1_turn:
+                state = game.get_state(player_one=True)
+                legal_actions = Game.get_actions(game.state)
+
+                action = agent1.choose_action(state, legal_actions)
+                game.make_action(action)
+            else:
+                state = game.get_state(player_one=False)
+                legal_actions = Game.get_actions(game.state)
+                action = agent2.choose_action(state, legal_actions)
+                game.make_action(action)
+
+                print(str(action))
+
+        return game.get_reward()
+
+
+
+    def main():
+        hands_in_epoch = 100000
+        agent = QLearningAgent(batch_size=hands_in_epoch, alpha = 0.005)
+        copy_agent = copy.deepcopy(agent)
+
+        total_reward = 0
+        total_hands = 0
 
         if __name__ == "__main__":
             main()
